@@ -9,7 +9,7 @@ The approach is designed to focus on an urban center and its surrounding area de
 
 ## Workflow
 
-<img src="workflow.png" alt="Detailed workflow diagram with input data, processing steps, and output." width="60%"/>
+<img src="workflow.png" alt="Detailed workflow diagram with input data, processing steps, and output." width="50%"/>
 #![Detailed workflow diagram with input data, processing steps, and output.](workflow.png)
 
 Based on a regional road network taken from OpenStreetMap (OSM), a grid of points in an area of interest and a selected buffer around this zone is created. Each point is assigned a population value using a census grid.
