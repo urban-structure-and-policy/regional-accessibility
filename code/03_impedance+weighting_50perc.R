@@ -12,7 +12,7 @@ library(terra)
 # --- PARAMETERS ---
 
 date <- format(Sys.Date(), "%y_%m_%d")  # if using matrix folder from today use this
-date <- "25_08_04"  # if using a folder from another date, set manually here
+#date <- "25_08_04"  # if using a folder from another date, set manually here
 
 ew_field <- "Einwohner"
 regionfield <- "region"

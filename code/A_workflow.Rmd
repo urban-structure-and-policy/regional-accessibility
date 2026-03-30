@@ -21,7 +21,7 @@ knitr::opts_knit$set(root.dir = normalizePath(my_wd))
 
 ## 00. Pre-processing
 
-**Description:** Prepares input data with python script. Here, preparation of the census csv was necessary to obtain a data set with a valid point geometry column. Requirements for input data are described in [data_input.md](https://github.com/anonymousanalysis/accessibility-analysis-review/blob/main/data_input.md), adjust pre-processing steps as needed to achieve them.
+**Description:** Prepares input data with python script. Here, preparation of the census csv was necessary to obtain a data set with a valid point geometry column. Requirements for input data are described in [data_input.md](data_input.md), adjust pre-processing steps as needed to achieve them.
 
 **Script:** `00_prepare_zensuspoints.py`\
 **Run in:** *Python*
@@ -50,7 +50,7 @@ Place input files in the respective folder and change file names and parameters 
 -   `crs` – CRS to work in (same as 00) [string with epsg code]
 -   `count_nearest_destinations` - folder name extension, e.g. '50perc' for using only half of the points [string]
 -   `grid_space` - grid width of points on road network [integer]
--   `ew_field` - field name with population [string]
+-   `ew_field` - field name with population [string], for raster input set to "EW1"
 -   `zensus_geomtype` - geometry type: 'Point', 'Polygon' or 'Raster' [string]
 
 Place input files in the respective folder and change file names and parameters if necessary. The script creates all necessary folders. Intermediate data will be saved in folders by region. Census data can be provided as a point grid, as a polygon grid or as a raster layer.
@@ -77,7 +77,7 @@ If distance/duration matrices already exist, `get_matrix`can be set to false. Th
 
 ## 03. Application of impedance functions and population weighting, normalisation and mapping to urban structures
 
-Description: Merge all matrices, apply decay functions and weighting for each point, eliminate extreme values. Calculate composite index from driving times and walking/cycling distances. Map points to urban structures.
+**Description:** Merge all matrices, apply decay functions and weighting for each point, eliminate extreme values. Calculate composite index from driving times and walking/cycling distances. Map points to urban structures.
 
 **Script:** `03_impedance+weighting_50perc.R`\
 **Run in:** *R*

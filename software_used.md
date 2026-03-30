@@ -1,3 +1,5 @@
+# Software
+
 The following software was used to execute the workflow provided in this repository. 
 
 ## R and R Packages
@@ -36,6 +38,7 @@ other attached packages:
 * sf_1.0-16
 * rmarkdown_2.27        
 
+
 ## QGIS
 QGIS version: 3.32.3-Lima 
  
@@ -55,11 +58,15 @@ Libraries
 * OS version Windows 10 Version 2009
 
 Active Python plugins
-* ORStools 1.8.4
+* ORStools 2.0.1
 * QuickOSM 2.2.3
+* db_manager 0.1.20
+* MetaSearch 0.3.6
+* processing 2.12.99
 
 Python Packages
 * geopandas version 0.13.2
+* pandas version 2.0.2
 * Standard library modules loaded:
   - os
   - sys
@@ -67,6 +74,7 @@ Python Packages
   - datetime
   - csv
   - traceback
+
 
 ## Python 
 Python 3.12.10
@@ -77,3 +85,17 @@ Packages
 * shapely version 2.1.2
 * Standard library modules loaded:
   - os
+
+
+# Hardware
+
+The project was developed and tested on the following hardware configuration:
+
+- **CPU**: Intel® Core™ i7-8700K @ 3.70 GHz (6 cores, 12 threads)
+- **RAM**: 64 GB DDR4
+- **GPU**: NVIDIA GeForce RTX 3080 Ti (12 GB VRAM)
+- **Storage**:
+  - 954 GB NVMe SSD (Samsung 960 PRO) — primary fast storage
+  - 2.91 TB SATA SSD — secondary fast storage
+  - 7.28 TB SATA HDD — bulk storage (dual drives, identical)
+

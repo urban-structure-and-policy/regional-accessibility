@@ -1,5 +1,5 @@
 
-# Measuring accessibility in polycentric urban form: A reproducible network-based approach for urban analytics
+# Measuring regional accessibility in urban form: A reproducible approach for urban analytics
 
 This repository provides an approach to calculate a centrality measure that describes the accessibility of urban structures in relation to all other inhabited places in a functional region. This is helpful to describe locations in the polycentric urban form of contemporary functional urban regions.
 We apply a network-based approach to the regional road network and calculate closeness centrality (CC) [Jain & Jehling (2023)](https://doi.org/10.1016/j.jtrangeo.2020.102781), where every location is described through the weighted travel time and distance to other locations on the road network using OpenRouteService (ORS, openrouteservice.org by HeiGIT). 
@@ -8,6 +8,8 @@ The approach is designed to focus on an urban center and its surrounding area de
 
 
 ## Workflow
+
+![Detailed workflow diagram with input data, processing steps, and output.](workflow.png)
 
 Based on a regional road network taken from OpenStreetMap (OSM), a grid of points in an area of interest and a selected buffer around this zone is created. Each point is assigned a population value using a census grid.
 Using ORS, the travel time (h) and distance (km) between all points is extracted as a basis for applying an impedance function to derive centrality values for locations.
@@ -24,13 +26,13 @@ Additional, it is possible to create an interpolated raster layer between the de
 
 The script also offers the possibility of merging individual region results together. This can be helpful for further analysis.
 
-
 ## Output
 
 The output of the process is a geographic data set of urban structures with three different CC measures (`CC_mean`, `CC_mean_car`, `CC_mean_shortdist`) . This accessibility value ranges between 0 and 1 with higher values representing a 
 higher centrality based on reachable population and good transport connections. As intermediate output the same CC measures are available on a regular point grid. Optionally, the output includes an interpolated raster of the point grid.
 All outputs are saved individually per region and optionally merged for all regions.
 
+![Diagram showing input, intermediate and result layers for the urban core of the Aachen region](layers.png)
 
 ## Getting started
 
@@ -40,14 +42,14 @@ Information on the data used in the provided code will be given but reproducing 
 
 ### Input data
 
-The process uses several data sources. More information on input data is provided in [data_input.md](https://github.com/anonymousanalysis/accessibility-analysis-review/blob/main/data_input.md).
+The process uses several data sources. More information on input data is provided in [data_input.md](data_input.md).
 Place the input files into a sub folder of your project folder `input`.
 
 ### Prerequisites
 
 The workflow uses [Python](https://www.python.org/), [QGIS](https://qgis.org/) and [R](https://www.r-project.org/).
 Further, an API and a local instance of [OpenRouteService](https://openrouteservice.org/) is needed.
-Further details on the software used can be found in [software_used.md](https://github.com/anonymousanalysis/accessibility-analysis-review/blob/main/software_used.md).
+Further details on the software used can be found in [software_used.md](software_used.md).
 
 Before running: 
 
@@ -68,7 +70,7 @@ The process includes these main steps:
 2. Computation of travel-time/distance between each origin and all destinations for each region
 3. Application of impedance functions and population weighting, normalisation and mapping to polygon shape structures
 
-The file [A_workflow.Rmd](https://github.com/anonymousanalysis/accessibility-analysis-review/blob/main/code/A_workflow.Rmd) gives an overview on the processing steps and describes them in detail. Processing steps can be run directly form the workflow script or have to be executed separately in QGIS, as explained in the workflow at the respective location.
+The file [A_workflow.Rmd](code/A_workflow.Rmd) gives an overview on the processing steps and describes them in detail. Processing steps can be run directly form the workflow script or have to be executed separately in QGIS, as explained in the workflow at the respective location.
 
 The code is taken from an application of the approach to vacant lots in four regions in Germany. One of them is the region of Aachen (Planungsregion Aachen), which is provided as test data.
 
