@@ -32,7 +32,7 @@ The output of the process is a geographic data set of urban structures with thre
 higher centrality based on reachable population and good transport connections. As intermediate output the same CC measures are available on a regular point grid. Optionally, the output includes an interpolated raster of the point grid.
 All outputs are saved individually per region and optionally merged for all regions.
 
-![Diagram showing input, intermediate and result layers for the urban core of the Aachen region](layers.png)
+<img src="layers.png" alt="Diagram showing input, intermediate and result layers for the urban core of the Aachen region]" width="500"/>
 
 ## Getting started
 
