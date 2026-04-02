@@ -10,7 +10,6 @@ The approach is designed to focus on an urban center and its surrounding area de
 ## Workflow
 
 <img src="workflow.png" alt="Detailed workflow diagram with input data, processing steps, and output." width="50%"/>
-#![Detailed workflow diagram with input data, processing steps, and output.](workflow.png)
 
 Based on a regional road network taken from OpenStreetMap (OSM), a grid of points in an area of interest and a selected buffer around this zone is created. Each point is assigned a population value using a census grid.
 Using ORS, the travel time (h) and distance (km) between all points is extracted as a basis for applying an impedance function to derive centrality values for locations.
