@@ -16,9 +16,9 @@ date <- format(Sys.Date(), "%y_%m_%d")  # if using matrix folder from today use 
 
 ew_field <- "Einwohner"
 regionfield <- "region"
-interpolation_field <- "CC_mean" #CC_mean, CC_mean_car, CC_mean_shortdist
+interpolation_fields <- c("CC_mean", "CC_mean_car", "CC_mean_shortdist")
 
-merge_matrix <- FALSE
+merge_matrix <- TRUE
 new_accessibility <- TRUE
 join_shapes <- TRUE
 use_filtered_shapes <- TRUE
@@ -247,23 +247,25 @@ for (region in regions) {
     r <- rast( ext(region_shape), resolution = 500)  # cell size = 1 (adjust as needed)
     crs(r) <- crs(cropped_newnames)
     
-    idw_model <- gstat(formula = as.formula(paste(interpolation_field, "~ 1")), locations = cropped_newnames, nmax = 7, set = list(idp = 4))
-    
-    interpolate_gstat <- function(model, x, crs, ...) {
-      v <- st_as_sf(x, coords=c("x", "y"), crs=crs)
-      p <- predict(model, v, ...)
-      as.data.frame(p)[,1:2]
+    for (interpolation_field in interpolation_fields){
+      idw_model <- gstat(formula = as.formula(paste(interpolation_field, "~ 1")), locations = cropped_newnames, nmax = 7, set = list(idp = 4))
+      
+      interpolate_gstat <- function(model, x, crs, ...) {
+        v <- st_as_sf(x, coords=c("x", "y"), crs=crs)
+        p <- predict(model, v, ...)
+        as.data.frame(p)[,1:2]
+      }
+      idw_result <- interpolate(r, idw_model, debug.level=0, fun=interpolate_gstat, crs=crs(r), index=1)
+      idw_result <- mask(idw_result, region_shape)
+      
+      # Save as GeoTIFF
+      interpolation_output <- file.path(wd, "output", "interpolation", interpolation_field)
+      if (!dir.exists(interpolation_output)) {dir.create(interpolation_output, recursive = TRUE)}
+      outraster <- file.path(interpolation_output, glue("interpolation_{region}_idp4.tif"))
+      writeRaster(idw_result, filename = outraster, overwrite = TRUE)
+      
+      plot(idw_result)
     }
-    idw_result <- interpolate(r, idw_model, debug.level=0, fun=interpolate_gstat, crs=crs(r), index=1)
-    idw_result <- mask(idw_result, region_shape)
-    
-    # Save as GeoTIFF
-    interpolation_output <- file.path(wd, "output", "interpolation", interpolation_field)
-    if (!dir.exists(interpolation_output)) {dir.create(interpolation_output, recursive = TRUE)}
-    outraster <- file.path(interpolation_output, glue("interpolation_{region}_idp4.tif"))
-    writeRaster(idw_result, filename = outraster, overwrite = TRUE)
-    
-    plot(idw_result)
   }
 }
 
@@ -283,19 +285,24 @@ if (join_all_shapes){
 
 if (join_all_interp) {
   cat(">> Rasters...", "\n")
-  # interpolation rasters
-  raster_files <- list.files(interpolation_output, pattern = "\\_idp4.tif$", full.names = TRUE)
-  rasters <- lapply(raster_files, rast)
-  if (length(rasters) > 1){
-    merged_raster <- do.call(terra::merge, rasters)
-  } else if (length(rasters) == 1){
-    merged_raster <- rasters[[1]]
-  } else {
-    stop("No raster files found!")
+  for (interpolation_field in interpolation_fields){
+    interpolation_output <- file.path(wd, "output", "interpolation", interpolation_field)
+    # interpolation rasters
+    raster_files <- list.files(interpolation_output, pattern = "\\_idp4.tif$", full.names = TRUE)
+    if (length(raster_files) == 0) {
+      message("Skipping ", interpolation_field, " — no raster files found.")
+      next  # Skip to next field
+    }
+    rasters <- lapply(raster_files, rast)
+    if (length(rasters) > 1){
+      merged_raster <- do.call(terra::merge, rasters)
+    } else {
+      merged_raster <- rasters[[1]]
+    }
+    writeRaster(merged_raster, file.path(interpolation_output, "interpolation_accessibility.tif"), overwrite = TRUE)
+    
+    plot(merged_raster)
   }
-  writeRaster(merged_raster, file.path(interpolation_output, "interpolation_accessibility.tif"), overwrite = TRUE)
-  
-  plot(merged_raster)
 }
 
 cat("Finished!", format(now(), "%H:%M:%S"), "\n")
