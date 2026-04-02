@@ -1,7 +1,7 @@
 
 # Measuring regional accessibility in urban form: A reproducible approach for urban analytics
 
-This repository provides an approach to calculate a centrality measure that describes the accessibility of urban structures in relation to all other inhabited places in a functional region. The repository supports the presentation and discussion of the approch in [Jehling, Kluwe and Kleiner (accepted)](). The regional scale approach is helpful to describe locations in the polycentric urban form of contemporary functional urban regions. 
+This repository provides an approach to calculate a centrality measure that describes the accessibility of urban structures in relation to all other inhabited places in a functional region. The repository supports the presentation and discussion of the approch in [Jehling, Kluwe and Kleiner (accepted)](https://agile-gi.eu/conference-2026). The regional scale approach is helpful to describe locations in the polycentric urban form of contemporary functional urban regions. 
 We apply a network-based approach to the regional road network and calculate closeness centrality (CC) [Jain & Jehling (2023)](https://doi.org/10.1016/j.jtrangeo.2020.102781), where every location is described through the weighted travel time and distance to other locations on the road network using OpenRouteService (ORS, openrouteservice.org by HeiGIT). 
 To capture urban-rural mobility behaviour as well as urban short-distance travelling, a combined centrality measure is calculated through applying impedance functions by mode of transport. 
 The approach is designed to focus on an urban center and its surrounding area determined by an input geometry and a buffer distance set around it.
@@ -10,7 +10,6 @@ The approach is designed to focus on an urban center and its surrounding area de
 ## Workflow
 
 <img src="workflow.png" alt="Detailed workflow diagram with input data, processing steps, and output." width="50%"/>
-#![Detailed workflow diagram with input data, processing steps, and output.](workflow.png)
 
 Based on a regional road network taken from OpenStreetMap (OSM), a grid of points in an area of interest and a selected buffer around this zone is created. Each point is assigned a population value using a census grid.
 Using ORS, the travel time (h) and distance (km) between all points is extracted as a basis for applying an impedance function to derive centrality values for locations.
