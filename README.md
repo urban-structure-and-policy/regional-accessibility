@@ -47,18 +47,16 @@ Place the input files into a sub folder of your project folder `input`.
 
 ### Prerequisites
 
-The workflow uses [Python](https://www.python.org/), [QGIS](https://qgis.org/) and [R](https://www.r-project.org/).
+The workflow uses [Python](https://www.python.org/), and [R](https://www.r-project.org/).
 Further, an API and a local instance of [OpenRouteService](https://openrouteservice.org/) is needed.
 Further details on the software used can be found in [software_used.md](software_used.md).
+An earlier version of the workflow used Python within QGIS, it was now updated to not require QGIS for reproducibility and code stability reasons.
 
 Before running: 
 
 * ORS:
   * Set up your own OpenRouteService instance. See details here: https://giscience.github.io/openrouteservice/run-instance/
-  * Install ORSTools QGIS Plugin: https://github.com/GIScience/orstools-qgis-plugin
-  * Set your local instance as provider for the plugin
-* QuickOSM:
-  * Install QuickOSM QGIS Plugin: https://quickosm.github.io/QuickOSM/
+  * Set your local instance as provider.
 
 
 ### Description of the code
@@ -70,7 +68,7 @@ The process includes these main steps:
 2. Computation of travel-time/distance between each origin and all destinations for each region
 3. Application of impedance functions and population weighting, normalisation and mapping to polygon shape structures
 
-The file [A_workflow.Rmd](code/A_workflow.Rmd) gives an overview on the processing steps and describes them in detail. Processing steps can be run directly form the workflow script or have to be executed separately in QGIS, as explained in the workflow at the respective location.
+The file [A_workflow.Rmd](code/A_workflow.Rmd) gives an overview on the processing steps and describes them in detail. Processing steps should be run directly form the workflow script.
 
 The code is taken from an application of the approach to vacant lots in four regions in Germany. One of them is the region of Aachen (Planungsregion Aachen), which is provided as test data.
 

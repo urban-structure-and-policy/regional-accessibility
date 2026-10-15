@@ -10,31 +10,69 @@ library(gstat)
 library(terra)
 
 # --- PARAMETERS ---
+# Set parameter defaults when not defined in workflow, do not overwrite.
 
-date <- format(Sys.Date(), "%y_%m_%d")  # if using matrix folder from today use this
-#date <- "25_08_04"  # if using a folder from another date, set manually here
+# Date - nur setzen, wenn nicht bereits definiert
+if(!exists("date", inherits = FALSE)) {
+  date <- format(Sys.Date(), "%y_%m_%d")  # if using matrix folder from today use this
+  # date <- "25_08_04"  # if using a folder from another date, set manually here
+}
 
-ew_field <- "Einwohner"
-regionfield <- "region"
-interpolation_fields <- c("CC_mean", "CC_mean_car", "CC_mean_shortdist")
+# Feldnamen und Parameter
+if(!exists("ew_field", inherits = FALSE)) {
+  ew_field <- "Einwohner"
+}
 
-merge_matrix <- TRUE
-new_accessibility <- TRUE
-join_shapes <- TRUE
-use_filtered_shapes <- TRUE
-join_all_shapes <- TRUE
-interpolation <- TRUE
-join_all_interp <- TRUE
+if(!exists("regionfield", inherits = FALSE)) {
+  regionfield <- "region"
+}
 
-crs = st_crs(25832)
+if(!exists("interpolation_fields", inherits = FALSE)) {
+  interpolation_fields <- c("CC_mean", "CC_mean_car", "CC_mean_shortdist")
+}
 
-wd <- getwd()
+# Boolean Flags
+if(!exists("merge_matrix", inherits = FALSE)) {
+  merge_matrix <- TRUE
+}
+if(!exists("new_accessibility", inherits = FALSE)) {
+  new_accessibility <- TRUE
+}
+if(!exists("join_shapes", inherits = FALSE)) {
+  join_shapes <- TRUE
+}
+if(!exists("use_filtered_shapes", inherits = FALSE)) {
+  use_filtered_shapes <- TRUE
+}
+if(!exists("join_all_shapes", inherits = FALSE)) {
+  join_all_shapes <- TRUE
+}
+if(!exists("interpolation", inherits = FALSE)) {
+  interpolation <- TRUE
+}
+if(!exists("join_all_interp", inherits = FALSE)) {
+  join_all_interp <- TRUE
+}
 
-shapes_name <- "vacant_lots"
-layer_name <- "vacant_lots"
+# CRS und Pfade
+if(!exists("crs", inherits = FALSE)) {
+  crs <- st_crs(25832)
+}
+if(!exists("wd", inherits = FALSE)) {
+  wd <- getwd()
+}
+if(!exists("shapes_name", inherits = FALSE)) {
+  shapes_name <- "vacant_lots"
+}
+if(!exists("layer_name", inherits = FALSE)) {
+  layer_name <- "vacant_lots"
+}
+if(!exists("municipality_file", inherits = FALSE)) {
+  layer_name <- "municipalities.gpkg"
+}
 
 # --- FILE INPUTS ---
-municipalities_path <- file.path(wd, 'input', 'municipalites.gpkg')
+municipalities_path <- file.path(wd, 'input',  municipality_file)
 print(municipalities_path)
 municipalities <- read_sf(dsn = municipalities_path) 
 
