@@ -7,105 +7,174 @@ output: html_document
 
 ```{r, echo=FALSE}
 library(rmarkdown)
+library(reticulate)
 ```
 
 ## Set root directory
 
-Set path to your root directory here.
+Set path to your root directory here. The scripts are expected in the subfolder `code/`, input data in `input/`.
 
 ```{r setup, include=FALSE}
 my_wd <- 'path/to/workspace/'
-  
+
 knitr::opts_knit$set(root.dir = normalizePath(my_wd))
 ```
+
+## Setup Python
+
+The Python steps (00-02) run through [reticulate](https://rstudio.github.io/reticulate/) in a conda environment; create the environment once.
+
+```{r python-install, eval=FALSE}
+reticulate::conda_create(
+  "accessibility",
+  packages = c("python=3.11", "geopandas", "shapely", "pyogrio", "rasterio",
+               "numpy", "openrouteservice", "pandas", "requests"))
+reticulate::conda_install("accessibility", pip = TRUE)
+```
+
+Select the environment:
+
+```{r python-setup}
+python_env <- "base"   # name of the conda environment created above
+use_condaenv(python_env, required = TRUE)
+py_config()
+```
+
+
+## Parameters
+
+All parameters of the workflow are set here. Parameters shared between steps are defined only once.
+
+```{r parameters}
+## --- General (all steps)
+epsg                <- 25832          # EPSG code of the CRS to work in [numeric]
+umkreis             <- 10000          # buffer distance in m [numeric]
+pct                 <- 100             # share of road points used, folder name extension e.g. '50perc' [integer]
+grid_space          <- 1000           # grid width of points on road network in m [integer]
+ew_field            <- "Einwohner"    # field name with population; for raster input use "EW1" [string]
+regionfield         <- "region"       # field name with region names [string]
+date_tag            <- NULL           # NULL = today; or e.g. "25_08_04" to use folders of another date [string]
+date                <- if (is.null(date_tag)) format(Sys.Date(), "%y_%m_%d") else date_tag
+municipality_file   <- 'municipalities.gpkg'  # name of municipality geometry file (located in input folder) [string]
+
+## --- 00 Pre-processing
+zensus_crs          <- 3035           # CRS of the census coordinates [EPSG code, numeric]; adjust to your data
+zensus_file         <- 'Zensus2022_Bevoelkerungszahl_100m-Gitter.csv' # name of zensus data file (located in input folder) [string]
+
+## --- 01 Road network points
+zensus_geomtype     <- "Point"        # 'Point', 'Polygon' or 'Raster' [string]
+user_agent          <- 'accessibility-analysis/1.0 (contact: your.name@example.org)'  # use a real contact!
+overpass_servers    <- c("https://overpass-api.de/api/interpreter",
+                         "https://lz4.overpass-api.de/api/interpreter")  # tried in turn on retries
+tile_size           <- NULL           # NULL or e.g. 20000 (m): split region bbox into tiles for the OSM download
+reuse_download      <- TRUE           # reuse previously downloaded OSM data [bool]
+
+## --- 02 Matrices
+get_matrix          <- TRUE           # calculate distance/duration matrices? [bool]
+reuse_selection     <- TRUE           # reuse the previous random selection of points (same date folder) [bool]
+random_seed         <- NULL           # integer for a reproducible random selection, NULL = random
+ors_url             <- "http://url/ors"
+max_split_depth     <- 1              # how often destinations may be split in two halves if ORS fails
+
+## --- 03 Impedance + weighting (R)
+interpolation_fields <- c("CC_mean", "CC_mean_car", "CC_mean_shortdist") # accessibility field to interpolate in raster [string of CC_mean, CC_mean_car, CC_mean_shortdist]
+shapes_name         <- "vacant_lots"  # name of polygon geometry file (input and output) [string]
+layer_name          <- "vacant_lots"  # name of polygon geometry file layer [string]
+merge_matrix        <- TRUE  # Should individual matrices be loaded and merged? [bool]
+new_accessibility   <- TRUE  # Should new accessibility values be calculated? Else existing point files will be loaded? [bool]
+join_shapes         <- TRUE  # Should CC values be joined to shape geometries? [bool]
+use_filtered_shapes <- TRUE  # Should a pre-filtered dataset of polygon shapes be loaded if it exists? [bool]
+join_all_shapes     <- TRUE  # Should the shape datasets with CC values joined from each region be joined together? [bool]
+interpolation       <- TRUE  # Should an interpolation raster be generated? [bool]
+join_all_interp     <- TRUE  # Should the interpolation rasters from all regions be joined into ne file? [bool]
+
+## --- derived (do not change)
+code_dir <- file.path(normalizePath(my_wd), "code")
+```
+
 
 ## 00. Pre-processing
 
 **Description:** Prepares input data with python script. Here, preparation of the census csv was necessary to obtain a data set with a valid point geometry column. Requirements for input data are described in [data_input.md](data_input.md), adjust pre-processing steps as needed to achieve them.
 
-**Script:** `00_prepare_zensuspoints.py`\
-**Run in:** *Python*
-
-**Parameters:**
-
--   `worksp` – workspace path [string]
--   `umkreis` – buffer distance [numeric]
--   `crs` – CRS to work in [string with epsg code]
--   `zensus_crs` – CRS of the census coordinates [code as numeric]
-
 Place input files in the respective folder and change file names and parameters if necessary.
+
+```{r step00}
+s00 <- import_from_path("00_prepare_zensuspoints", path = code_dir)
+invisible(s00$run(
+  worksp     = normalizePath(my_wd),
+  umkreis    = umkreis,
+  crs        = paste0("EPSG:", epsg),
+  zensus_crs = as.integer(zensus_crs),
+  municipality_file=municipality_file,
+  zensus_file=zensus_file
+))
+```
 
 ## 01. Road network points with population values per region
 
-**Description:** Loads street network from OSM. Projection of a point grid of any grid width onto a road network, adding the number of inhabitants to points.
+**Description:** Loads street network from OSM (Overpass API). Projection of a point grid of any grid width onto a road network, adding the number of inhabitants to points.
 
-**Script:** `01_OSM_highways2points+einwohner.py`\
-**Run in:** *QGIS Python console*\
 **Run time for provided data set:** 2 min
 
-**Parameters:**
+Place input files in the respective folder and change file names and parameters if necessary. The script creates all necessary folders. Intermediate data will be saved in folders by region. Census data can be provided as a point grid, as a polygon grid or as a raster layer (then set `ew_field` to "EW1"). The public Overpass servers require a descriptive `user_agent`; for large regions, `tile_size` (e.g. 20000) splits the download into smaller requests.
 
--   `worksp` – workspace path (same as 00) [string]
--   `umkreis` – buffer distance (same as 00) [numeric]
--   `crs` – CRS to work in (same as 00) [string with epsg code]
--   `count_nearest_destinations` - folder name extension, e.g. '50perc' for using only half of the points [string]
--   `grid_space` - grid width of points on road network [integer]
--   `ew_field` - field name with population [string], for raster input set to "EW1"
--   `zensus_geomtype` - geometry type: 'Point', 'Polygon' or 'Raster' [string]
-
-Place input files in the respective folder and change file names and parameters if necessary. The script creates all necessary folders. Intermediate data will be saved in folders by region. Census data can be provided as a point grid, as a polygon grid or as a raster layer.
+```{r step01}
+s01 <- import_from_path("01_osm_highways2points+population", path = code_dir)
+invisible(s01$run(
+  worksp           = normalizePath(my_wd),
+  umkreis          = umkreis,
+  crs              = paste0("EPSG:", epsg),
+  pct              = as.integer(pct),
+  grid_space       = as.integer(grid_space),
+  ew_field         = ew_field,
+  region_field     = regionfield,
+  zensus_geomtype  = zensus_geomtype,
+  overpass_servers = as.list(overpass_servers),
+  tile_size        = tile_size,
+  user_agent       = user_agent,
+  reuse_download   = reuse_download,
+  municipality_file=municipality_file,
+  date_tag         = date
+))
+```
 
 ## 02. Computation of travel-time/distance between each origin and all destinations for each region
 
-**Description:**: Selection of 50 % of all points (less computation time), requests to local ORS instance - OD matrix is created from each starting point to all target points.
+**Description:** Selection of 50 % of all points (less computation time), requests to local ORS instance - OD matrix is created from each starting point to all target points.
 
-**Script:** `02_centrality_50Prozent.py`\
-**Run in:** *QGIS Python console*\
-**Run time for provided data set:** 33 min (2581 points)
+**Run time for provided data set:** 10 min for 50% of points (~2750 points)
 
-**Parameters:**
+If distance/duration matrices already exist, `get_matrix` can be set to false. This can be helpful if new population should be provided or during debugging but should be used carefully because it can lead to inconsistencies in the sampled points and matrices. For a reproducible random selection set `random_seed`; with `reuse_selection = TRUE` an existing selection of the same date folder is reused. Matrices that already exist are skipped, so an interrupted run can simply be restarted. Points for which ORS fails are written to `err_points_*.gpkg` in the region folder.
 
--   `worksp` – workspace path (same as 00 and 01) [string]
--   `umkreis` – buffer distance (same as 00 and 01) [numeric]
--   `crs` – CRS to work in (same as 00) [string with epsg code]
--   `count_nearest_destinations` - folder name extension, e.g. '50perc' for using only half of the points (same as 01) [string]
--   `grid_space` - grid width of points on road network (same as 01) [integer]
--   `ew_field` - field name with population (same as 01) [string]
--   `get_matrix` - Should distance/duration matrices be calculated? [bool]
+The calculation takes a long time. It is usually more convenient to run this chunk interactively than to knit the whole document.
 
-If distance/duration matrices already exist, `get_matrix`can be set to false. This can be helpful if new population should be provided or during debugging but should be used carefully because it can lead to inconsistencies in the sampled points and matrices.
+```{r step02}
+s02 <- import_from_path("02_matrix_calculation", path = code_dir)
+invisible(s02$run(
+  worksp          = normalizePath(my_wd),
+  pct             = as.integer(pct),
+  grid_space      = as.integer(grid_space),
+  ew_field        = ew_field,
+  region_field    = regionfield,
+  get_matrix      = get_matrix,
+  reuse_selection = reuse_selection,
+  date_tag        = date,
+  random_seed     = random_seed,
+  ors_url         = ors_url,
+  municipality_file=municipality_file,
+  max_split_depth = as.integer(max_split_depth)
+))
+```
 
 ## 03. Application of impedance functions and population weighting, normalisation and mapping to urban structures
 
 **Description:** Merge all matrices, apply decay functions and weighting for each point, eliminate extreme values. Calculate composite index from driving times and walking/cycling distances. Map points to urban structures.
 
-**Script:** `03_impedance+weighting_50perc.R`\
-**Run in:** *R*
-**Run time for provided data set:** 3 min with merging matrix files (2581 files)
+**Run time for provided data set:** 3 min including merging matrix files
 
-**Parameters:**
-Set these in the code file:
+Loading and merging the individual point matrices takes some time for large datasets. You can set `merge_matrix` to FALSE if a merged matrix from this point sample already exists and you are only adjusting the index calculation. Checking which step of the other boolean variables you need and adjusting them accordingly can also save time but rather marginally.
 
--   `date`- automatically takes today's date but needs to be set manually if using folders from another data; use format "25_08_04" [string]
--   `ew_field` - field name with population (same as 01 and 02) [string]
--   `regionfield` - field name with regionnames [string]
--   `interpolation_field` - accessibility field to interpolate in raster [string of CC_mean, CC_mean, CC_mean_car, CC_mean_shortdist]
-
--   `shapes_name` - name of polygon geometry file (input and output) [string]
--   `layer_name` - name of polygon geometry file layer (input and output) [string]
-
--   `merge_matrix` - Should individual matrices be loaded and merged? [bool]
--   `new_accessibility` - Should new accessibility values be calculated? Else existing point files will be loaded? [bool]
--   `join_shapes` - Should CC values be joined to shape geometries? [bool]
--   `use_filtered_shapes` - Should a pre-filtered dataset of polygon shapes be loaded if it exists? [bool]
--   `join_all_shapes` - Should the shape datasets with CC values joined from each region be joined together? [bool]
--   `interpolation` - Should an interpolation raster be generated? [bool]
--   `join_all_interp` - Should the interpolation rasters from all regions be joined into ne file? [bool]
-
-
-Loading and merging the individual point matrices takes some time. You can set `merge_matrix` to False if a merged matrix from this point sample already exist and you are only adjusting the index calculation.
-Checking which step of the other boolean variables you need and adjusting them accordingly can also save time but rather marginally. 
-
-```{r}
+```{r step03}
 source("./code/03_impedance+weighting_50perc.R", local = TRUE)
 ```
