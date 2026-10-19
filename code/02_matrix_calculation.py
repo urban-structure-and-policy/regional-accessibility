@@ -1,10 +1,4 @@
-"""
-Script 02 (standalone, no QGIS): random subset of road points, population sums,
-destination selection and ORS distance/duration matrices.
 
-Needs the output of skript_01_vorbereitung.py (must be importable, i.e. in the same folder).
-Required packages: geopandas, shapely>=2, pyogrio, numpy, pandas, openrouteservice (pip)
-"""
 import logging
 import os
 import sys
@@ -15,7 +9,7 @@ import numpy as np
 import openrouteservice
 import pandas as pd
 
-from a01 import sum_population_per_point
+from 01_osm_highways2points+population import sum_population_per_point
 
 # Column names of the matrix CSVs.
 COL_FROM, COL_TO, COL_DIST, COL_DUR = 'FROM_ID', 'TO_ID', 'DIST_KM', 'DURATION_H'
