@@ -9,7 +9,8 @@ import numpy as np
 import openrouteservice
 import pandas as pd
 
-from 01_osm_highways2points+population import sum_population_per_point
+from shapely.geometry import box
+
 
 # Column names of the matrix CSVs.
 COL_FROM, COL_TO, COL_DIST, COL_DUR = 'FROM_ID', 'TO_ID', 'DIST_KM', 'DURATION_H'
@@ -64,7 +65,22 @@ def matrix_with_split(client, origin_id, origin_xy, ids, xy, profile, depth):
             matrix_with_split(client, origin_id, origin_xy, ids[mid:], xy[mid:], profile, depth - 1),
         ]
         return pd.concat(parts, ignore_index=True)
+    
 
+def sum_population_per_point(points, ew_points, ew_field, extent_buffer_pct=2.0):
+    """Population sum per road point = sum over its Voronoi cell.
+    A population point lies in the Voronoi cell of its nearest road point, so a nearest-neighbour
+    join is equivalent. Cells are bounded by the point extent grown by `extent_buffer_pct` %
+    (as in QGIS), so population points outside that extent are ignored."""
+    minx, miny, maxx, maxy = points.total_bounds
+    ex = (maxx - minx) * extent_buffer_pct / 100
+    ey = (maxy - miny) * extent_buffer_pct / 100
+    extent = box(minx - ex, miny - ey, maxx + ex, maxy + ey)
+
+    ew = ew_points.loc[ew_points.intersects(extent), [ew_field, 'geometry']]
+    nearest = gpd.sjoin_nearest(ew, points[['id', 'geometry']], how='inner')
+    nearest = nearest[~nearest.index.duplicated(keep='first')]
+    return nearest.groupby('id')[ew_field].sum()
 
 # ---------------------------------------------------------------- main
 def run(worksp,
