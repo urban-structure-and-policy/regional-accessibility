@@ -176,3 +176,13 @@ Loading and merging the individual point matrices takes some time for large data
 ```{r step03}
 source("./code/03_impedance+weighting.R", local = TRUE)
 ```
+## 04. Generate barplots for empty lot analysis 
+
+**Description:** pick up the output datasets on empty lots from 03 and plot them for the interpretation of empty lots within the region(s)
+
+**Run time for provided data set:** less than one minute for the provided dataset
+
+```{r step04}
+source("./code/04_barplot.R", local = TRUE)
+```
+
